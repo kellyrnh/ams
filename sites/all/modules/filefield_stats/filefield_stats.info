@@ -1,0 +1,12 @@
+name = Filefield Stats
+description = Gathers download statistics for a filefield item
+package = CCK
+core = 6.x
+dependencies[] = filefield
+
+; Information added by drupal.org packaging script on 2011-04-19
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "filefield_stats"
+datestamp = "1303171997"
+

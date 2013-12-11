@@ -1,0 +1,40 @@
+<?php
+// Notify CCK when this module is enabled, disabled, installed, 
+// and uninstalled so CCK can do any necessary preparation or cleanup.
+/**
+* @file
+* Implementation of hook_install().
+*/
+function cck_vcard_install() {
+  drupal_load('module', 'content');
+  content_notify('install', 'cck_vcard');
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function cck_vcard_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'cck_vcard');
+}
+
+/**
+* Implementation of hook_enable().
+*
+* Notify content module when this module is enabled.
+*/
+function cck_vcard_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'cck_vcard');
+}
+
+/**
+* Implementation of hook_disable().
+*
+* Notify content module when this module is disabled.
+*/
+function cck_vcard_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'cck_vcard');
+}
+?>

@@ -1,0 +1,781 @@
+<?php
+
+/**
+ * @file
+ *   Form settings per user
+ *
+ * @version
+ *   $Id: wsod.module,v 1.1.2.43 2010/12/09 15:31:28 kenorb Exp $
+ *
+ * @developer:
+ *    Rafal Wieczorek <kenorb@gmail.com>
+ */
+
+define('WSOD_BT_ARG_LIMIT', 100);
+define('NL', "<br>\n"); // new line in messages
+define('WSOD_ID', '$Id: wsod.module,v 1.1.2.43 2010/12/09 15:31:28 kenorb Exp $');
+declare(ticks = 1);
+
+/**
+ * Implementation of hook_boot(). Runs even for cached pages.
+ */
+function wsod_boot() {
+  global $drupal_path;
+  $drupal_path = getcwd();
+  register_shutdown_function('wsod_check_wsod');
+} 
+
+/**
+ * Implementation of hook_menu().
+ */
+function wsod_menu() {
+  $items['admin/build/dtools'] = array(
+    'title' => 'Diagnostics Tools',
+    'description' => t('Diagnostics tools only for advanced users.'),
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array('wsod_admin_form'),
+    'access arguments' => array('administer dtools'),
+    'file' => 'wsod.admin.inc', 
+  );
+  $items['admin/build/dtools/wsod'] = array(
+    'title' => t('Diagnostics Tools'),
+    'type' => MENU_NORMAL_ITEM | MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -9,
+  ); 
+  $items['admin/build/dtools/rebuild'] = array(
+    'title' => 'Rebuild menu',
+    'page arguments' => array('wsod_menu_rebuild_confirm'),
+    'file' => 'wsod.admin.inc',
+    'access arguments' => array('administer dtools'),
+    'type' => MENU_CALLBACK,
+  ); 
+  $items['wsod'] = array(
+    'title' => 'WSOD',
+    'access callback' => 'wsod_check_user',
+    'access arguments' => array(1, 2), // username/password_in_md5
+    'page callback' => 'wsod_check_wsod_callback',
+    'page arguments' => array(TRUE),
+    'type' => MENU_CALLBACK,
+  );
+  $items['wsod/%/%'] = array(
+    'title' => 'WSOD',
+    'access callback' => 'wsod_check_user',
+    'access arguments' => array(1, 2), // username/password_in_md5
+    'page callback' => 'wsod_check_wsod_callback',
+    'page arguments' => array(TRUE),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of access callback
+ * @return boolean
+ * 
+ * You can generate your passwod in MD5 by following methods:
+ * - from sql client: SELECT pass FROM users WHERE name = 'my_username'
+ * - from shell console: printf your_password | md5
+ * - Try: http://md5.md/
+ */
+function wsod_check_user($username, $crc_sum) {
+  global $user;
+  $access = FALSE;
+  if (user_access('administer dtools', $user)) {
+    $access = TRUE;
+  } else if ($uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s' AND pass = '%s'", $username, $crc_sum))) {
+    // Log in user
+    $user = user_load(array('uid' => $uid));
+    $access = TRUE;
+  }
+  return $access;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function wsod_perm() {
+   return array('administer dtools');
+}
+
+/**
+ * Implementation of menu callback
+ */
+function wsod_check_wsod_callback() {
+  wsod_exit(FALSE, FALSE, TRUE);
+  wsod_check_wsod(TRUE);
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function wsod_form_alter($form, $form_state, $form_id) {
+    global $active_forms;
+    $active_forms[] = $form_id;
+}
+
+/**
+ * Implementation of hook_exit().
+ */
+function wsod_exit($destination = TRUE, $check = FALSE, $ignore = TRUE) {
+  static $wsod_exit = FALSE, $wsod_exit_ignore = FALSE;
+  if ($destination) {
+    $wsod_exit = $destination; // set each time TRUE or destination url if hook_exit was executed
+  } else if ($check) {
+    return $wsod_exit && !$wsod_exit_ignore;
+  } else if ($ignore) {
+    $wsod_exit_ignore = TRUE;
+  }
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ */
+function wsod_theme_registry_alter(&$items) {
+  /* TODO: check for backtrace if some module mess up with theme registry */
+}
+
+/**
+ * Detect WSOD and fix it
+ * 
+ * @param bool $verbose
+ *   if TRUE, print debug output to the screen
+ * @param bool $fix_on_fly
+ *   if TRUE, wsod will try to fix the problem on the fly
+ * @param bool $emergency
+ *   if TRUE, make additional checking for WSODs (could spent even 3x time)
+ * @return string
+ *   returns diagnostics messages
+ * 
+ */
+function wsod_check_wsod($verbose = FALSE, $fix_on_fly = TRUE, $emergency = FALSE, $sess_close = FALSE, $output = '') {
+    global $drupal_path, $wsod_locked;
+
+    $wsod_locked = TRUE;
+    $verbose = $verbose || variable_get('wsod_verbose_mode', FALSE);
+    
+    // init variables
+    if (!function_exists('t')) {
+      function t($msg, $args = NULL) { return $msg; }
+    }
+
+    // version request
+    if ($_GET['v']) {
+      $output .= t('Version:') .  WSOD_ID . $nl;
+      $verbose ? print $output : NULL;
+      return;
+    }
+
+    // CHECK FOR FATAL ERRORS  (which Drupal can't handle)
+    if (wsod_fatal_error_checker($output, $fix_on_fly)) {
+        $output .= t('Backtrace: ') . wsod_get_backtrace() . $nl . $nl;
+        $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+        return; // can't continue, if there are some fatal errors
+    }
+
+    /* set base Drupal path as current especially during shutdown */
+    $curr_path = getcwd();
+    if ($curr_path <> $drupal_path) { // Note: Working directory of the script can change inside the shutdown function under some web servers, e.g. Apache.
+        chdir($drupal_path);
+    }
+
+    // ignore wsod checking on batch processing and maintenance work or it's disabled
+    if (defined('MAINTENANCE_MODE') || isset($_SESSION['batch_form_state'])) {
+        return;
+    }
+
+    $path = $_GET['q'];
+    if (arg(0) == 'wsod') {
+      $path = 'node';
+    } if (!$emergency && !variable_get('wsod_live_checking', FALSE) && arg(0) <> 'wsod') {
+      return;
+    }
+   
+    // ignore wsod checking on POST forms, it breaking the forms (#416616) (TODO: later it could be supported - )
+    if (!empty($_POST['form_build_id']) && !variable_get('wsod_checking_on_post', FALSE)) {
+        return;
+    }
+
+    // ignore if we are on non-html page
+    $headers = drupal_get_headers(); // FIXME: any other way to get headers?
+    $ignore_formats = array('xml', 'javascript', 'json', 'plain', 'image', 'application', 'csv', 'x-comma-separated-values');
+        foreach ($ignore_formats as $format) {
+        if (strstr($headers, $format)) {
+            return;
+        }
+    }
+
+    /* check core modules */
+    if ($disabled_module = wsod_check_core_modules(array('node', 'system'))) {
+        $output .= t("Following core module is disabled: $disabled_module!").$nl;
+        if ($fix_on_fly) {
+          module_enable(array($disabled_module));
+          wsod_clear_caches(); // clear all caches
+          module_rebuild_cache(); // rebuild paths in system table
+          $output .= t("Fixing by enabling $disabled_module core module!").$nl;
+        }
+        $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+        return;
+    }
+
+    /* check if hook_exit has been executed properly */
+    if (!($wsod_exit = wsod_exit(FALSE, TRUE)) && module_exists('wsod') && arg(0) <> 'wsod') {
+        $output .= t("hook_exit wasn't executed properly at %path, possible unexpected exit()/die()", array('%path' => $_GET['q'])).$nl;
+        $output .= t('Backtrace: ') . wsod_get_backtrace() . $nl . $nl;
+        $_GET['debug'] ? $output .= wsod_tick(TRUE) : $output .= t('To see more debug details you can turn on the debugger, by adding `debug` param at the end of URL.') . $nl; // DEBUG_PRINT
+        $verbose ? $nl . $nl : $output = t('If you need to debug this issue, please activate verbose mode and submit manually the invalid form and see the output.') . $nl;
+        $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+        return;
+    } else if (is_string($wsod_exit)) { // check if $wsod_exit contain new destination url
+      $output .= t("WSOD: Redirection to: ".drupal_get_destination()).$nl;
+      $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+      return; // ignore any action if redirection via drupal_goto() is made
+    }
+
+    if (!function_exists('menu_get_item')) {
+         /*
+             FIXME:
+             In some version of PHP4 with specified HTTP Requests Drupal includes could be not loaded in this stage
+             causing several errors with 'Call to undefined function'.
+             There are too many dependencies, so if this will happen, it's better to stop at this stage
+          */
+        $output = ltrim($output);
+        $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+        return;
+    }
+
+    // ignore some specified callbacks (like Rebuilding permissions)
+    $_GET['debug'] ? register_tick_function('wsod_tick') : NULL; // DEBUG_ON
+    $router_item = menu_get_item();
+    $_GET['debug'] ? unregister_tick_function('wsod_tick') : NULL; // DEBUG_OFF
+    if ($router_item['page_callback'] == 'system_batch_page') {
+        return;
+    }
+
+    if (!module_load_include('inc', 'wsod', 'wsod')) { // include functions based on path from system table...
+        require_once dirname(__FILE__) . '/wsod.inc'; // ...otherwise include it manually
+    }
+
+    // check input variables
+    isset($_GET['fix']) ? $fix_on_fly = TRUE : NULL; // if fix is defined, then switch to fixing mode
+
+    /* check menu handler */
+    if (!$sess_close) { // ignore 2nd call of menu handler when error occurs, in which case wsod is called again
+        ob_start();
+        /* WARNING: register_tick_function() should not be used with threaded web server modules with PHP 5.2 or lower!!! */
+        $_GET['debug'] ? register_tick_function('wsod_tick') : NULL; // DEBUG_ON
+        $return = menu_execute_active_handler($path); // use q argument to change the default path
+        $_GET['debug'] ? unregister_tick_function('wsod_tick') : NULL; // DEBUG_OFF
+        $content_output = ob_get_clean(); // TODO: what if there is some content?
+        // CHECK FOR FATAL ERRORS again
+        if (wsod_fatal_error_checker($output, $fix_on_fly)) {
+            $_GET['debug'] ? $output .= wsod_tick(TRUE) : NULL; // DEBUG_PRINT
+            $output = ltrim($output);
+            $verbose ? print $output : watchdog('wsod', $output); // print or log the error
+            return; // can't continue, if there is some fatal error
+        }
+    }
+
+    if (is_null($return)) { /* check menu handler */
+        $output .= sprintf("%s: returned %s - it's very bad!", 'menu_execute_active_handler()', 'NULL') . $nl;
+        $output .= t("WSOD detected!").t('&nbsp;') . t("Checking for problems...") . $nl;
+        $output .= sprintf(t("ERROR: %s returned empty value!"), 'menu_execute_active_handler()') . $nl;
+        /* check theme hooks */
+        $res = wsod_validate_theme_hooks($verbose, $output);
+        if (!$res) {
+            if ($fix_on_fly) {
+                wsod_clear_caches(); // clear all caches
+                module_rebuild_cache(); // rebuild paths in system table
+                $output .= t("Re-testing...").$nl;
+                $res = wsod_validate_theme_hooks($verbose, $output);
+                if (!$res) {
+                    $output .= t("There is still problem related to theme hooks").$nl; // FIXME
+                } else {
+                    $output .= t("Fixed?!").$nl;
+                }
+            } else {
+                $output .= t("fix_on_fly is no enabled, please enable it to fix the problem").$nl;
+            }
+        } else {
+            $output .= t("Validation theme hooks completed.").$nl;
+        }
+
+        /* check forms */
+        /* TODO
+        $invalid_forms = wsod_check_forms();
+        if (!empty($invalid_forms)) {
+          $output .= "empty forms = ".print_r($invalid_forms,true)."<br>";
+        }
+        */
+
+        // PRINT ALL ERRORS FROM SESSION WHICH WILL HELP TO IDENTIFY THE PROBLEM
+        if ($_SESSION['messages']['error']) {
+            $error_messages = $_SESSION['messages']['error'];
+            foreach ($error_messages as $error) {
+                $error = str_replace(dirname($drupal_path),'',$error); // delete Drupal full path for security reason
+                $output .= print_r($error,true); // show session errors
+            }
+        }
+        $output .= t("Done.").$nl;
+    } else {
+      /* Standard Drupal behavior section. */
+      $title = drupal_set_title();
+      if ($emergency) {
+        wsod_validate_menu_router();
+        $output .= t('Menu router table rebuild!') . $nl;
+      }
+      switch ($return) {
+        case MENU_NOT_FOUND:
+            ob_start(); // start buffering
+            drupal_not_found(); // return page not found, there can be some status error messages
+            $page_output = ob_get_clean(); // get page output
+            if (empty($page_output)) {
+                $output .= t('MENU_NOT_FOUND: Rendered page is empty!').$nl;
+                if ($fix_on_fly) {
+                  module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+                  $output .= t('Module list refreshed!').$nl;
+                  drupal_rebuild_theme_registry(); // probably cached theme_registry is broken, rebuild it
+                  $output .= t('Theme registry has been cleared from cache!').$nl;
+                }
+            } else if (empty($title)) { // 
+                $output .= t('Note: if you see duplicated page below, please disable WSOD checking in settings!') . $nl;
+                $output .= $page_output; // if nothing to show, output standard page not found
+            }
+        break;
+        case MENU_ACCESS_DENIED:
+            ob_start(); // start buffering
+            drupal_access_denied(); // return permission denied page , there can be some status error messages
+            $page_output = ob_get_clean(); // get page output
+            if (empty($page_output)) {
+                $output .= t('MENU_ACCESS_DENIED: Rendered page is empty!').$nl;
+                if ($fix_on_fly) {
+                  module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+                  $output .= t('Module list refreshed!').$nl;
+                  drupal_rebuild_theme_registry(); // probably cached theme_registry is broken, rebuild it
+                  $output .= t('Theme registry has been cleared from cache!').$nl;
+                }
+            } else {
+                $output .= t('Note: if you see duplicated page below, please disable WSOD checking in settings!') . $nl;
+                $output .= $page_output; // if nothing to show, output standard page not found
+                if ($emergency) {
+                    /* TODO: don't print it twice */
+                    // drupal_set_message(t('%function: %handler - seems ok!', array('%function' => 'menu_execute_active_handler()', '%handler' => 'MENU_ACCESS_DENIED')).$nl);
+                }
+            }
+        break;
+        case MENU_SITE_OFFLINE:
+            ob_start(); // start buffering
+            drupal_site_offline(); // return site offline page, there can be some status error messages
+            $page_output = ob_get_clean(); // get page output
+            if (empty($page_output)) {
+                $output .= t('MENU_SITE_OFFLINE: Rendered page is empty!').$nl;
+                if ($fix_on_fly) {
+                  module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+                  $output .= t('Module list refreshed!').$nl;
+                  drupal_rebuild_theme_registry(); // probably cached theme_registry is broken, rebuild it
+                  $output .= t('Theme registry has been cleared from cache!').$nl;
+                }
+            } else {
+                $output .= t('Note: if you see duplicated page below, please disable WSOD checking in settings!') . $nl;
+                $output .= $page_output; // if nothing to show, output standard page not found
+                if ($emergency) {
+                    /* TODO: don't print it twice */
+                    //drupal_set_message(t('%function: %handler - seems ok!', array('%function' => 'menu_execute_active_handler()', '%handler' => 'MENU_SITE_OFFLINE')).$nl);
+                }
+            }
+        break;
+        default: // other cases
+            if (module_exists('content_profile')) {
+                /* TODO: Sometimes can't render page on shutdown, because of some errors recently
+                    Like: Fatal error: Class 'content_profile_theme_variables' not found in content_profile\content_profile.module on line 585
+                 */
+                //$output .= t('Ignoring page rendering checking, because of incompability with content_profile module.').$nl;
+                //break;
+            }
+            $page_output = theme('page', $return); // return page not found, there can be some status error messages
+            if (empty($page_output)) {
+                $output .= t('DEFAULT: Rendered page is empty!').$nl;
+                if ($fix_on_fly) {
+                  module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+                  $output .= t('Module list refreshed!').$nl;
+                  drupal_rebuild_theme_registry(); // probably cached theme_registry is broken, rebuild it
+                  $output .= t('Theme registry has been cleared from cache!').$nl;
+                }
+                if ($emergency) {
+                    /* TODO: don't print it twice */
+                    //drupal_set_message(t('%function: %handler - seems ok!', array('%function' => 'menu_execute_active_handler()', '%handler' => "$return")).$nl);
+                }
+            } else {
+                $output .= t('Note: if you see duplicated page below, please disable WSOD checking in settings!') . $nl;
+                $output .= $page_output; // if nothing to show, output standard page not found
+            }
+      }
+    }
+    
+    if (is_null($return) || $emergency) {
+      /* check menu router hooks */
+      /* Note:
+           Following block code could slow down your website even 3x, 
+           so it should be executed only when menu handler returns NULL or wsod checking it in emergency mode.
+       */
+      $router_item = menu_get_item($path); // get router item
+      $router_callback = $router_item['page_callback'];
+      if (!empty($router_callback) && !function_exists($router_callback)) { // check if page callback exist
+          $output .= sprintf("ERROR: Callback: %s() doesn't exist!" . NL, $router_item['page_callback']).$nl;
+          drupal_rebuild_theme_registry(); // probably cached theme_registry is broken, rebuild it
+          $output .= t('Theme registry has been cleared from cache!').$nl;
+          wsod_rebuild_menu_router_table();
+          $output .= t('menu_router table rebuild!').$nl;
+      } else if (!empty($router_callback)) {
+          if (!$sess_close) { // ignore 2nd call of menu handler when error occurs, in which case wsod is called again
+            $res = wsod_check_page_callback($router_item, $verbose, $output, $content); // get content of page callback (inc)
+              if (empty($res)) { // check if page callback returned some content
+                  $output .= sprintf("ERROR: Callback: %s() returned empty content!", $router_callback).$nl;
+                  $output .= sprintf("NOTICE: router_item = %s!", print_r($router_item, TRUE)) . $nl;
+                  if ($fix_on_fly) { // if fix mode, then fix the errors
+                      module_load_include('inc', 'system', 'system.admin'); // include functions
+                      $output .= wsod_clear_caches(); // clear all caches
+                      module_rebuild_cache();
+                      $output .= t('Rebuilded module cache.').$nl; // module rebuild cache
+                      wsod_check_theme_registry($output); // check if theme registry is broken, then rebuild it
+                  } else {
+                      $output .= t("fix_on_fly is no enabled, please enable it to fix the problem") . $nl;
+                  }
+              } else {
+                $output .= $res; // output rendered result
+              }
+            }
+          }
+    }
+    $_GET['debug'] ? $output .= wsod_tick(TRUE) : NULL; // DEBUG_PRINT
+    $verbose ? print (!empty($output) ? $output : '.') : NULL ; // if you see dots, that mean nothing to show (no WSOD on front page, see README.txt)
+    $output = ltrim($output); // remove spaces from output
+    if (!empty($output) && empty($page_output)) {
+        $output = ltrim($output);
+        watchdog('wsod', $output); // log the error
+    }
+    $wsod_locked = FALSE;
+    return $output;
+}
+
+/**
+ * Experimental function to return last executed code in case of fatal errors or unexpected exit()/die()
+ * 
+ */
+function wsod_last_debug_code() {
+  // require 'wsod_debug.php';
+}
+
+/**
+ * Implementation of register_tick_function callback
+ *
+ * Function which is executed on every line of code
+ * 
+ */
+function wsod_tick($print = FALSE) {
+  static $wsod_tick = 0, $bts = array();
+  if (!$print) {
+    $last_bt = '#' . $wsod_tick . ': ' . wsod_get_backtrace(0, 5, FALSE, debug_backtrace(TRUE));
+    $bts[$wsod_tick++] = $last_bt;
+  } else {
+    $output = implode(NL . NL, $bts);
+    $bts = array();
+    return $output;
+  }
+}
+
+/**
+ * Check menu_router table, if it's truncated
+ * 
+ * Read more:
+ *  http://drupal.org/node/238760 (menu_router table truncated and site goes down)
+ *  http://drupal.org/node/496198 (module_list() is broken in 6.x)
+ *  http://drupal.org/node/514898 (ERROR: Callback: system_main_admin_page() doesn't exist!)
+ * 
+ */
+function wsod_validate_menu_router() {
+  if (db_result(db_query("SELECT COUNT(*) FROM {menu_router} WHERE path = '%s' OR path LIKE '%s'", 'node', 'admin/build/dtools')) <> 2) {
+    wsod_rebuild_menu_router_table(); // Rebuild menu_router, menu_links tables
+  }
+  /* Validate admin tree - http://drupal.org/node/514898 */
+  if (db_result(db_query("SELECT mlid FROM {menu_links} WHERE link_path = '%s' AND module = '%s'", 'admin', 'system')) > 2) { 
+    wsod_rebuild_menu_router_table(); // Rebuild menu_router, menu_links tables
+    // FIXME: menu_router rebuilding could not solve the problem, try disable modules which hook_menu_alter implementation like admin_menu
+  }
+}
+
+/**
+ * Check if required core modules are enabled
+ * 
+ * @param array $modules_name
+ *   list of modules to check
+ * @return string
+ *   returns return name of disabled modules, otherwise return NULL
+ */
+function wsod_check_core_modules($modules_name) {
+  foreach ($modules_name as $key => $module_name) {
+    if (!$status = db_result(db_query("SELECT status FROM {system} WHERE name = '%s'", $module_name))) {
+      return $module_name;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Rebuild system table
+ *
+ */
+function wsod_rebuild_system_table() {
+  require_once './includes/file.inc'; // needed for file_scan_directory()
+  require_once './modules/system/system.module'; // needed for system_get_files_database()
+  module_rebuild_cache(); // rebuild paths in system table
+}
+
+/**
+ * Rebuild menu_router table
+ *
+ */
+function wsod_rebuild_menu_router_table() {
+  module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL); // we need enter into FULL bootstrap mode to fully rebuild menu_router table
+  menu_rebuild(); // Rebuild menu_router, menu_links tables
+}
+
+/**
+ * Rebuild theme registry
+ *
+ * Note: The reason of broken theme registry could be in example t() call from early stage of Drupal bootstrap (hook_boot)
+ *       So if you have broken contributed module, this function fix the problem only temporary.
+ * TODO: Find the module which messing up with theme registry through backtrace
+ *
+ */
+function wsod_rebuild_theme_registry(&$output = NULL) {
+  drupal_rebuild_theme_registry();
+  //module_list(TRUE, FALSE); // Refresh the module list to include the new enabled module. [#496198]
+  global $theme;
+  unset($theme); // unset theme global variable to rebuild it
+  unset($GLOBALS['theme']);
+  module_implements('theme', FALSE, TRUE);
+  init_theme(); // Initialize the theme system by loading the theme.
+  $output ? $output .= t('Theme registry has been rebuilt!') . $nl : NULL;
+}
+
+/**
+ * Check issues in theme registry
+ *
+ */
+function wsod_check_theme_registry(&$output = NULL) {
+  $output ? $output .= t('Checking theme registry...') . $nl: NULL;
+  $hooks = theme_get_registry();
+  $hook = 'placeholder'; // basic theme hook name, which should exists always in Drupal 6.x
+  if (!isset($hooks[$hook])) {
+    $output ? $output .= t('Missing placeholder in theme registry!') . $nl : NULL;
+    $output ? $output .= sprintf('If problem appears again, please disable or look for invalid hook_boot code in following modules: %s', implode(', ', module_implements('boot'))) . $nl: NULL;
+    wsod_rebuild_theme_registry($output);
+  }
+}
+
+/**
+ * Return backtrace
+ * 
+ * @param integer $no_del
+ *   Number elements to remove from the backtrace from the beginning
+ * @param integer $tail
+ *   Number elements to to keep removing the rest from the backtrace from the end
+ * @param bool $in_array
+ *   If TRUE, return as array, instead as string
+ * @param object/array $input_backtrace
+ *   If provided, use this backtrace, instead of current
+ */
+function wsod_get_backtrace($no_del = 1, $tail = 0, $in_array = FALSE, $input_backtrace = NULL) {
+  $backtrace = $input_backtrace ? $input_backtrace : debug_backtrace(TRUE);
+  $buffer = array();
+  if (is_array($backtrace)) {
+    // OLD CODE: for ($i = 0; $i < $no_del; $i++) { array_shift($backtrace); } // FIXME: use array_slice()
+    /* Note: PHP Compability - The optional preserve_keys parameter was added in 5.0.2. */
+    (count($backtrace) >= $no_del + 1) ? $backtrace = array_slice($backtrace, $no_del) : NULL; // remove recent function from backtrace
+    (count($backtrace) >= $tail) ? $backtrace = array_slice($backtrace, (-$tail), NULL, TRUE) : NULL; // return only last specified number of functions
+    // ($tail && $tail < count($backtrace)) ? $backtrace = array_slice($backtrace, 0, -$tail) : NULL; // delete number of elements from end
+    foreach ($backtrace as $index => $function) {
+        $function_name = $function['function'];
+        $filename = !empty($backtrace[$index]['file']) ? basename($backtrace[$index]['file']) : '?';
+        $line = !empty($backtrace[$index]['line']) ? $backtrace[$index]['line'] : '?';
+        $args = '';
+        switch (gettype($arg = $function['args'])) {
+          case 'boolean':
+            $args = $arg ? 'TRUE' : 'FALSE';
+          break;
+          case 'integer':
+          case 'string':
+          case 'double':
+            $args = $arg;
+          break;
+          case 'resource':
+            $args = gettype($arg);
+          break;
+          case 'NULL':
+            $args = 'NULL';
+          break;
+          case 'array':
+          case 'object':
+          default:
+            $args = serialize($arg);
+        }
+        $args = (strlen($args) > WSOD_BT_ARG_LIMIT) ? gettype($function['args']) : $args;
+        $buffer[] = "$function_name($args)[$filename:$line]";
+    } 
+  }
+  if (empty($buffer)) {
+    $buffer = 'n/a';
+  } else if ($tail && count($buffer) > $tail) {
+  }
+  return $in_array ? $buffer : implode(';', $buffer);
+}
+
+/**
+ * Clear all caches
+ */
+function wsod_clear_caches() {
+    $output = '';
+    cache_clear_all(NULL, 'cache');
+    $output .= sprintf(t("Cleared cache using %s"), 'cache_clear_all()') . NL;
+    drupal_flush_all_caches();
+    $output .= sprintf(t("Cleared cache using %s"), 'drupal_flush_all_caches()') . NL;
+    return $output;
+}
+
+/**
+ * Check for fatal errors
+ */
+function wsod_fatal_error_checker(&$output, $fix_on_fly = TRUE) {
+    // CHECK FOR FATAL ERRORS (which Drupal can't handle)
+    $isError = FALSE;
+    if ((version_compare(PHP_VERSION, '5.2.0') === 1) && $error = error_get_last()) {
+        switch($error['type']){
+            case E_ERROR:
+            case E_PARSE:
+            case E_CORE_ERROR:
+            case E_COMPILE_ERROR:
+            case E_USER_ERROR:
+                $isError = TRUE;
+                break;
+        }
+        /* Show fatal error on the page.
+           Most people don't use this module, if they don't have any problem,
+           so our priority is to show what's wrong with the website
+         */
+        if ($isError){
+            var_dump($error);
+            wsod_fatal_error_fix($error, $output, $fix_on_fly); // check if we can fix handled error
+            $output .= "ERROR: Script execution halted with error: {$error['message']}<br>";
+        } else {
+            $output .= "NOTICE: Script execution completed with error: {$error['message']}<br>";
+        }
+    }
+    return $isError;
+}
+
+/**
+ * Try to fix fatal error
+ */
+function wsod_fatal_error_fix($error, &$output, $fix_on_fly = TRUE) {
+    $err_msg = $error['message'];
+    $file = $error['file'];
+    $module_name = strpos(basename($file), 'module') !== FALSE ? current(explode('.',basename($file))) : basename(dirname($file)); // FIXME: Following case: sites/all/modules/hierarchical_select/modules/hs_content_taxonomy.module
+    if (strpos($err_msg, "Cannot redeclare cache") !== FALSE) {
+        if ($fix_on_fly) { // if fix mode, then fix the errors
+            /* TODO: We can't use Drupal functions in case of fatal error
+            module_load_include('inc', 'system', 'system.admin'); // include functions
+            $output .= t('Trying to rebuild module cache.'); // module rebuild cache
+            module_rebuild_cache();
+             */
+        }
+        $output .= 'Tip: Try to disable additional cache module from your settings.php.' . NL;
+    } else if (strpos($err_msg, "Cannot redeclare") !== FALSE) {
+        if ($fix_on_fly) { // if fix mode, then fix the errors
+            /* TODO: We can't use Drupal functions in case of fatal error
+            module_load_include('inc', 'system', 'system.admin'); // include functions
+            $output .= t('Trying to rebuild module cache.'); // module rebuild cache
+            module_rebuild_cache();
+             */
+        }
+    } else if (strpos($err_msg, "Call to undefined function") !== FALSE) {
+/* TODO: Fatal error: Call to undefined function user_access() in ...  */
+        if ($fix_on_fly) { // if fix mode, then fix the errors
+          wsod_rebuild_system_table(); // rebuild system table
+          $output .= 'Rebuild system table.' . NL;
+          wsod_force_module_load_all(); // force module load
+          $output .= 'Force to load all enabled module files.<br>\n';
+          preg_match('/(?P<func_prefix>[a-z0-9]+)_/', $err_msg, $matches);
+          $func_prefix = $matches['func_prefix'];
+          //$func_name = $matches['func_name']; // TODO
+          $module = db_result(db_query("SELECT name FROM {system} WHERE name LIKE '$func_prefix%%' AND status = 0 LIMIT 1"));
+          if ($module_name && db_query("UPDATE {system} SET status = 1 WHERE name LIKE '$module%%' AND status = 0 LIMIT 1")) {
+            $output .= "Enabled potential dependency module: $module_name." . NL;
+          }
+          $output .= 'Please refresh the page if problem has been fixed.<br>\n';
+            /* TODO:
+                Another Solution:
+                    Eventually we can load all module files and check where it's defined.
+                    After that we can compare and check if the module weight is correct.
+                    Needed module can be detected from $error via function name.
+                    Dependend module can be detected via filename $error['file']
+                    Fix: we can increase weight of the module depends of the other module.
+                    Example code:
+                        $weight = (int) db_result(db_query("SELECT weight FROM {system} WHERE name = 'module1'"));
+                        db_query("UPDATE {system} SET weight = %d WHERE name = 'module2'", $weight + 1);
+             */
+        }
+    } else if (strpos($err_msg, "syntax error") !== FALSE) {
+      $output .= sprintf('Tip: In case of syntax error, check your PHP compability with your module or disable it (module: %s)' . NL, $module_name);
+    } else if (strpos($err_msg, "Maximum execution time") !== FALSE) {
+      $output .= 'Tip: You need to increase max_execution_time in your php.ini and please install drupal_tweaks module.' . NL;
+    }
+    if (!$fix_on_fly) {
+        $output .= t("fix_on_fly is no enabled, please enable it to fix the problem") . NL;
+    }
+}
+
+/**
+ * Force load all enabled modules
+ *
+ */
+function wsod_force_module_load_all() {
+    foreach (module_list(TRUE, FALSE) as $name) {
+      include_once drupal_get_filename('module', $name);
+    }
+}
+
+/**
+ * Check forms
+ */
+function wsod_check_forms() {
+  // TODO
+  global $active_forms;
+  $active_forms=array_unique($active_forms); // remove duplicates
+  $empty_forms = array();
+  $form_state = array ('storage' => NULL, 'submitted' => FALSE, 'post' => array ());
+  $node = array ('storage' => NULL, 'submitted' => FALSE, 'post' => array ());
+  $max_count = count($active_forms); // get count of array
+  foreach ($active_forms as $key => $form_id) {
+    $id = $form_id;
+    //$form = drupal_get_form($id); //$form = drupal_retrieve_form($form_id, $form_state);
+
+    $form = drupal_retrieve_form($form_id, $form_state);
+    module_invoke_all('form_alter', $form);
+    if (empty($form)) {
+        $empty_forms[] = $form_id;
+    }
+
+    //$form_content = drupal_render_form($form_id, $form);
+    $form_content = drupal_get_form($form_id);
+    if (empty($form_content)) {
+      $empty_forms[] = $form_content;
+    }
+
+    if ($key > $max_count+1) {
+      print "Recurrency detected in form_alter hook!<br>";
+      break;
+    }
+  }
+  return array_unique($empty_forms);
+}

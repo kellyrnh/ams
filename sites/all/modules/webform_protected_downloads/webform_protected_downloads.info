@@ -1,0 +1,13 @@
+name = Webform Protected Downloads
+description = "Provides webform protected downloads"
+core = 6.x
+dependencies[] = webform
+dependencies[] = upload
+dependencies[] = private_upload
+dependencies[] = token
+; Information added by drupal.org packaging script on 2013-09-11
+version = "6.x-1.0-rc4+2-dev"
+core = "6.x"
+project = "webform_protected_downloads"
+datestamp = "1378902030"
+

@@ -1,0 +1,13 @@
+[28-Sep-2013 15:14:17 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:42:56 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:45:49 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:48:04 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:48:07 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:49:15 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node.tpl.php on line 4
+[28-Sep-2013 21:52:12 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:52:14 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:53:37 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:53:39 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:56:45 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[28-Sep-2013 21:56:47 America/New_York] PHP Fatal error:  Call to undefined function node_class() in /home/amsdev/public_html/sites/all/themes/oe/node-page.tpl.php on line 4
+[29-Sep-2013 20:19:20 America/New_York] PHP Fatal error:  Unsupported operand types in /home/amsdev/public_html/modules/block/block.module on line 352

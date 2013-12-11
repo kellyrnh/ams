@@ -1,0 +1,21 @@
+.context-plugins .context-plugin-form .form-checkboxes {
+  max-height: 700px !Important;
+  overflow: inherit !Important;
+}
+
+#context-blockform div.context-blockform-selector {
+  height: 30em !Important;
+}
+
+/* classes if Skinr Ui enabled */
+
+.rubik .collapsible .fieldset-title span.icon {
+  top: -20px !Important;
+}
+
+.rubik legend a {
+  padding-left: 5px;
+  color: #333;
+}
+
+/* end skinr adjustmnents */

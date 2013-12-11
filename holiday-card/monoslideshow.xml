@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<album thumbnail="album/Frame1.jpg" itemPath="album" thumbnailPath="album/">
+<configuration backgroundColor="#ffffff" delay="2" >
+		<caption displayMode="never" >
+			<title/>
+			<description/>
+			<shadow/>
+			<transition/>
+		</caption>
+		<navigation backgroundColor="#ffffff" >
+			<albums>
+				<caption type="none" >
+					<title/>
+					<description/>
+				</caption>
+				<shadow/>
+				<transition>
+					<shadow/>
+				</transition>
+			</albums>
+			<items>
+				<shadow/>
+				<transition>
+					<shadow/>
+				</transition>
+			</items>
+			<shadow/>
+			<caption type="none" >
+				<title/>
+				<description/>
+			</caption>
+			<pageIndicator/>
+		</navigation>
+		<reflection/>
+		<controller type="none" >
+			<transition/>
+			<scrubBar/>
+			<shadow/>
+		</controller>
+		<mark>
+			<shadow/>
+		</mark>
+		<progress type="none" >
+			<shadow/>
+		</progress>
+		<transition/>
+		<shadow/>
+		<sound/>
+		<thumbnailNavigation>
+			<items>
+				<shadow/>
+				<transition>
+					<shadow/>
+				</transition>
+			</items>
+			<shadow/>
+		</thumbnailNavigation>
+	</configuration>
+	<contents>
+		<image source="Frame1.jpg" title="title 1" description="description 1"  />
+		<image source="Frame2.jpg" title="title 2" description="description 2" />
+		<image source="Frame3.jpg" title="title 3" description="description 3" />
+			<image source="Frame4.jpg" title="title 2" description="description 2" />
+				<image source="Frame5.jpg" title="title 2" description="description 2" />
+					<image source="Frame6.jpg" title="title 2" description="description 2" />
+						<image source="Frame7.jpg" title="title 2" description="description 2" />
+							<image source="Frame8.jpg" title="title 2" description="description 2" />
+								<image source="Frame9.jpg" title="title 2" description="description 2" />
+									<image source="Frame10.jpg" title="title 2" description="description 2" />
+										<image source="Frame11.jpg" title="title 2" description="description 2" />
+											<image source="Frame12.jpg" title="title 2" description="description 2" />
+												<image source="Frame13.jpg" title="title 2" description="description 2" action="pause" /> 
+	</contents>
+</album>

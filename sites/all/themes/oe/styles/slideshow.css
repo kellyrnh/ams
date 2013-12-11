@@ -1,0 +1,282 @@
+/**
+ * Views Slideshow Dynamic display block module template:vsd-gradient-green-30l - Cascading Style Sheet 
+ * (c) Copyright Phelsa Information Technology, 2010. All rights reserved.
+ * Version 1.0 (26-JAN-2011) 
+ */ 
+
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.container {
+	background-color:#ccc !Important;
+	width:945px !Important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.container-inner {
+	height:320px !important;
+	position:relative;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slider {
+	width:775px !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slider-left {
+	float:right;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slider-right {
+	float:left;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slider-inner {
+	height:320px !important;
+	overflow:hidden;
+	position:relative;
+	visibility:hidden;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide {
+	display:none;
+	height:100%;
+	left:0;
+	position:absolute;
+	top:0;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-inner img {
+	height: auto !important;
+	margin:0!important;
+	padding:0!important;
+	width:775px !important;
+	vertical-align:  bottom !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text {
+	background:transparent url(../images/transparent_bg.png) repeat scroll 0 0!important;
+	position:absolute;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-horizontal {
+	height:85px;
+	left:0;
+	width:515px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-vertical {
+	height:315px !important;
+	top:0;
+	width:190px !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-top {
+	top:7px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-right {
+	left:560px !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-bottom {
+	bottom:7px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-left {
+	left:60px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-text-inner {
+	padding:10px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-title {
+	float:left;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-title-vertical {
+	width:180px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-title-horizontal {
+	float:left;
+	width:158px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-title h2 {
+	margin:-5px 0 0 0;
+	padding:0;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-title-inner {
+	color:white;
+	font-weight:bold;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-body-vertical {
+	width:182px !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-body-horizontal {
+	float:left;
+	width:327px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-body-inner {
+	color:white;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-body-inner p {
+	margin:0 8px 0 0;
+	padding:0;
+	line-height: 1.45em !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more {
+	width:110px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more p {
+	margin:0!important;
+	padding:0!important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more a {
+	background:url(../images/readmore.png) no-repeat;
+	border:none;
+	bottom:5px !important;
+	color:#fff;
+	font-size:13px;
+	font-family: Verdana, Geneva, sans-serif;
+	margin:0;
+	padding:6px 1px 4px 1px !important;
+	position:absolute;
+	right:3px;
+	text-decoration:none;
+	text-align:center;
+	width:165px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more-horizontal a {
+	right:-17px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more-vertical a {
+	right:5px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more a:hover {
+	background:url(../images/readmore-hover.png) no-repeat;
+	text-decoration:underline;
+	color: #333;
+	
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more-horizontal a:hover {
+	right:-17px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.slide-read-more-vertical a:hover {
+	right:5px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager {
+	display:block;
+	margin:0;
+	position:relative;
+	width:165px !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager-left {
+	float:left;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager-right {
+	float:right;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager-inner {
+	height:294px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager .custom-pager-item {
+	float:left;
+	margin-top:3px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager .custom-pager-item-inner {
+	border:1px solid #aaa;
+	width:157px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager a {
+	background:transparent url(../images/gradient_vert_46px.png) repeat scroll 0 0!important;
+	border:1px solid #aaa;
+	color:#352c25;
+	display:block;
+	font-family:verdana, arial, sans-serif;
+	font-size:.9em;
+	font-weight:bold;
+	height:42px;
+	line-height:42px;
+	text-decoration:none;
+	text-align:center;
+	width:157px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager a.activeSlide {
+	background:transparent url(../images/gradient_vert_46px_dark.png) repeat scroll 0 0!important;
+	opacity:1;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager a:hover {
+	background:transparent url(../images/gradient_vert_46px_dark.png) repeat scroll 0 0!important;
+	color:#333;
+	opacity:1;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.custom-pager a:focus {
+	outline:none;
+}
+/*previous next pager */
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager {
+	position:absolute;
+	left:0px;
+	bottom:0px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager-inner {
+	/*Layout*/
+  height:17px;
+	position:relative;         /* to position prev, count and next absolute in this div */
+	/*decoreation*/
+  background:#DDDDDD;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a {
+	/*Layout*/
+  position:absolute;
+	/*decoreation*/
+  color:#000000;
+	font-family:Tahoma, Arial, sans-serif;
+	font-size:.8em;
+	font-weight:bold;
+	line-height:17px;
+	outline-style:none;
+	text-decoration:none !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a:hover {
+	color:#000000!important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a:focus {
+	color:#000000!important;
+}
+/********************* previous next pager in pager **********************/
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager {
+	width:680px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a.prev {
+	left:15px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a.count {
+	left:327px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-next-pager a.next {
+	right:15px;
+}
+/********************* previous next pager on slide **********************/div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.nav-slide-container {
+	height: 50px;
+	opacity: 0.7;
+	position: absolute;
+	top:129px;
+	width:50px;
+	z-index: 101;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-container {
+	left:5px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.nav-slide-container a {
+	height:50px;
+	width:50px;
+	display:block!important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.next-container a.next {
+	background: url(../images/next.png) no-repeat !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-container a.prev {
+	background: url(../images/prev.png) no-repeat !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.next-container a.next:hover {
+	background: url(../images/next.png) no-repeat !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.prev-container a.prev:hover {
+	background: url(../images/prev.png) no-repeat !important;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.nav-slide-container a:focus {
+	outline:none;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.next-container {
+	left:460px;
+}
+/********************* spacers **********************/
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.spacer-vertical {
+	display:block;
+	height:1px;
+	width:3px;
+}
+div.views-slideshow-ddblock-cycle-vsd-gradient-green-30l div.spacer-horizontal {
+	clear:both;
+	height:6px;
+}

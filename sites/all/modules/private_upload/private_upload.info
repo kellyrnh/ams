@@ -1,0 +1,6 @@
+name = Private Upload
+description = Allow individual files to be kept in a private file directory.
+dependencies[] = upload
+package = File management
+core = 6.x
+

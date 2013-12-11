@@ -1,0 +1,14 @@
+; $Id: wsod.info,v 1.1.2.2 2010/03/01 00:34:37 kenorb Exp $
+name = WSOD (White Screen of Death)
+description = Detect a white screen of death and diagnose its cause
+package = Development
+core = 6.x
+version = VERSION
+
+
+; Information added by drupal.org packaging script on 2010-12-10
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "dtools"
+datestamp = "1291939898"
+

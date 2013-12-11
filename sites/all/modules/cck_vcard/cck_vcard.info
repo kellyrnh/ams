@@ -1,0 +1,10 @@
+; $Id;
+name = CCK Vcard
+description = Module that allows creation of Vcard using any CCK content type
+core = 6.x
+; Information added by drupal.org packaging script on 2011-08-10
+version = "6.x-1.5"
+core = "6.x"
+project = "cck_vcard"
+datestamp = "1312937091"
+

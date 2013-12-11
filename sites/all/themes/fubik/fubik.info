@@ -1,0 +1,11 @@
+name = "Fubik"
+description = "Clean admin theme."
+base theme = rubik
+core = "6.x"
+engine = "phptemplate"
+
+regions[right] = "Right sidebar"
+regions[content] = "Content"
+
+stylesheets[all][] = css/layout.css
+stylesheets[all][] = css/local.css

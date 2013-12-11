@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * Filefield Stats: This file handlers the schema definition and the install/uninstall handlers
+ */
+
+
+/**
+ * Implementation of hook_install().
+ */
+function filefield_stats_install() {
+  drupal_install_schema('filefield_stats');
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function filefield_stats_uninstall() {
+  drupal_uninstall_schema('filefield_stats');
+}
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function filefield_stats_schema() {
+  $schema['filefield_stats'] = array(
+    'fields' => array(
+      'fid'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Primary Key: the {files}.fid'),
+      'vid'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Primary Key: the {node}.vid'),
+      'timestamp' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The timestamp of the download'),
+      'uid'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The {users}.uid of the downloader'),
+      'hostname'  => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => '', 'description' => 'The hostname downloading the file (usually IP)'),
+      'referer'   => array('type' => 'text', 'not null' => FALSE, 'description' => 'Referer for the download'),
+    ),
+    'indexes' => array('fid_vid' => array('fid', 'vid')),
+  );
+  return $schema;
+}

@@ -1,0 +1,41 @@
+/**
+ * staff styles
+ */
+#main-content .view-staff .views-field-field-staff-image-fid {
+  -moz-border-radius:5px 5px 5px 5px;
+  -webkit-border-radius:5px 5px 5px 5px;
+  border-radius:5px 5px 5px 5px;
+  background-color:#EEEEEE;
+  border:1px solid #D2D2D2;
+  padding:10px;
+  width:160px;
+  margin-bottom: 20px
+}
+#main-content .view-staff .views-field-title {
+  font-size: 16px;
+}
+.view-staff .views-field-field-staff-image-fid img {
+  -moz-box-shadow:0 0 5px #888888;
+  -webkit-box-shadow:0 0 5px #888888;
+  box-shadow:0 0 5px #888888;
+  border:5px solid #FFFFFF;
+  display:block;
+}
+.view-staff table {
+  width: 100%;
+}
+.view-staff .col-1,
+.view-staff .col-2,
+.view-staff .col-3 {
+  width:33%;
+}
+.sidebar .view-staff td {
+  padding-bottom: 20px;
+}
+#main-content .views-field-title a,
+.views-field-title a:visited {
+ /*  color: #4F4E4E; */
+}  
+#main-content .views-field-title a:hover {
+    color: #4F4E4E;
+}

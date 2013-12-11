@@ -1,0 +1,722 @@
+<?php
+/*
+  TODO add support for Location
+  TODO add support for Full Name
+*/
+
+// permissions definitions
+define('CCK_VCARD_PERM_ADMIN', 'designate fields for vcard use');
+
+// query scope definitions
+define('CCK_VCARD_SCOPE_NODE', 'node');
+define('CCK_VCARD_SCOPE_TYPE', 'type');
+define('CCK_VCARD_SCOPE_LANGUAGE', 'language');
+define('CCK_VCARD_SCOPE_ALL', 'all');
+
+// query field definitions
+define('CCK_VCARD_FIELDS_IGNORE', '');
+
+/**
+ * Implementation of hook_perm().
+ */
+function cck_vcard_perm() {
+  return array(CCK_VCARD_PERM_ADMIN);
+}
+/**
+ * Implementation of hook_form_alter().
+ */
+function cck_vcard_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'node_type_form' && user_access(CCK_VCARD_PERM_ADMIN) && isset($form['#node_type'])) {
+    cck_vcard_node_settings_form($form);
+  }
+  else if (strpos($form_id, 'node_form') !== FALSE && user_access(CCK_VCARD_PERM_ADMIN)) {
+    $form['cck_vcard'] = array(
+      '#type' => 'hidden',
+      '#default_value' => '0',
+    );
+  }
+}
+
+/**
+ * Add the unique field settings form to content type forms (node_type_form).
+ */
+function cck_vcard_node_settings_form(&$form) {
+  // load fields for content type
+  $ntype = $form['#node_type']->type;
+  $nodetype = node_get_types('type', $ntype);
+  $fieldopts = array();
+  $fieldopts[CCK_VCARD_FIELDS_IGNORE] = t('Ignore Field');
+  if (module_exists('content')) {
+    $ctype = content_types($ntype);
+    if (is_array($ctype) && is_array($ctype['fields'])) {
+      foreach ($ctype['fields'] as $field => $info) {
+        $fieldopts[$field] = $info['widget']['label'] .' ('. $field .')';
+      }
+    }
+  }
+
+  // build the form
+  $form['cck_vcard'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('CCK Vcard settings'),
+    '#weight' => 1,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  //Array ( [title] => Title (title) [name] => Author [field_fname] => First Name (field_fname) [field_lname] => Last Name (field_lname) )
+  //foreach ($fieldopts as $field) {}
+  
+  $form['cck_vcard']['cck_vcard_fields_enable'] = array(
+    '#type' => 'radios',
+    '#title' => t('Enable Vcard for this content type'),
+    '#options' => array(t('Disable'), t('Enable')),
+    '#default_value' => variable_get('cck_vcard_fields_enable_'. $ntype, 0),
+  );
+  $form['cck_vcard']['cck_vcard_fields_org'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Organization name'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_org_'. $ntype, ''),
+    '#description' => t('This is the Organization name in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_fname'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the First Name'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_fname_'. $ntype, ''),
+    '#description' => t('This is the First Name in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_lname'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Last Name'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_lname_'. $ntype, ''),
+    '#description' => t('This is the Last Name in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_title'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Job Title'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_title_'. $ntype, ''),
+    '#description' => t('This is the Job Title in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_email'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Email'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_email_'. $ntype, ''),
+    '#description' => t('This is the Email in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_streetaddress'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Street Address'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_streetaddress_'. $ntype, ''),
+    '#description' => t('This is the Street Address in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_extendedaddress'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Extended Address'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_extendedaddress_'. $ntype, ''),
+    '#description' => t('This is the Extended Address in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_locality'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the City'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_locality_'. $ntype, ''),
+    '#description' => t('This is the City in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_state'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the State'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_state_'. $ntype, ''),
+    '#description' => t('This is the State in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_postalcode'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Postal Code'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_postalcode_'. $ntype, ''),
+    '#description' => t('This is the Postal Code in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_workphone'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Work Phone'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_workphone_'. $ntype, ''),
+    '#description' => t('This is the Work Phone in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_cellphone'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Mobile Phone'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_cellphone_'. $ntype, ''),
+    '#description' => t('This is the Mobile Phone in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_faxphone'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the Fax Phone'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_faxphone_'. $ntype, ''),
+    '#description' => t('This is the Fax Phone in the vcard.'),
+  );
+  $form['cck_vcard']['cck_vcard_fields_url'] = array(
+    '#type' => 'select',
+    '#title' => t('Choose the field for the URL'),
+    '#options' => $fieldopts,
+    '#default_value' => variable_get('cck_vcard_fields_url_'. $ntype, ''),
+    '#description' => t('This is the URL in the vcard.'),
+  );
+}
+
+/*
+* Implementation of hook_menu()
+*/
+ function cck_vcard_menu() {
+   $items = array();
+   $items['cck_vcard/vcard.php'] = array(
+     'title' => '',
+     'page callback' => 'cck_vcard_create_vcard',
+     'access callback' => 'user_access',
+     'access arguments' => array('access content'),
+     'type' => MENU_CALLBACK,
+   );
+  return $items;
+ }
+
+/**
+* Implementation of hook_link()
+*/
+
+function cck_vcard_link($type, $object, $teaser = FALSE) {
+  $ntype = $object->type;
+  $cck_vcard_fields_enable = variable_get('cck_vcard_fields_enable_'. $ntype, 0);
+  switch ($type) {
+    case 'node':
+      if($cck_vcard_fields_enable == 55) {
+        $links["vcard_link"] = array(
+        'title' => 'View Vcard',
+        'href' => 'cck_vcard/vcard.php',
+        'query' => 'url=http://'.$_SERVER['HTTP_HOST'].base_path().'/node/'.$object->nid,
+        'attributes' => array(
+        'class' => 'vcard-view')
+        );
+      }
+     
+  }
+  
+  return $links;
+
+}
+
+/**
+ * Implementation of FAPI hook_elements().
+ *
+ * Any FAPI callbacks needed for individual widgets can be declared here,
+ * and the element will be passed to those callbacks for processing.
+ *
+ * Drupal will automatically theme the element using a theme with
+ * the same name as the hook_elements key.
+ *
+ * Includes a regex to check for valid values as an additional parameter
+ * the validator can use. The regex can be overridden if necessary.
+ */
+function cck_vcard_elements() {
+  return array(
+    'cck_vcard' => array(
+      '#input' => TRUE,
+      '#columns' => array('value'), '#delta' => 0,
+      '#process' => array('cck_vcard_process'),
+    ),
+  );
+}
+
+/**
+ * Process an individual element.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $form['#field_info'][$element['#field_name']].
+ */
+function cck_vcard_process($element, $edit, $form_state, $form) {
+  $field = $form['#field_info'][$element['#field_name']];
+  $field_key = $element['#columns'][0];
+  $delta = $element['#delta'];
+  
+      $element[$field_key] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Hide Vcard'),
+        '#default_value' => $field['cck_vcard_show'] ? $field['cck_vcard_show'] : 0,
+        '#required' => FALSE,
+        '#description' => t('Check to hide the vcard data for this node'),
+      );
+
+  $element[$field_key]['#maxlength'] = !empty($field['max_length']) ? $field['max_length'] : NULL;
+
+  if (!empty($field['text_processing'])) {
+    $filter_key = $element['#columns'][1];
+    $format = isset($element['#value'][$filter_key]) ? $element['#value'][$filter_key] : FILTER_FORMAT_DEFAULT;
+    $parents = array_merge($element['#parents'] , array($filter_key));
+    $element[$filter_key] = filter_form($format, 1, $parents);
+  }
+
+  // Used so that hook_field('validate') knows where to flag an error.
+  // $element['_error_element'] = array(
+  //   '#type' => 'value',
+  //   '#value' => implode('][', array_merge($element['#parents'], array($field_key))),
+  // );
+
+  return $element;
+}
+
+/**
+* Implementation of hook_field_info().
+*/
+function cck_vcard_field_info() {
+  return array(
+    // The machine name of the field, 
+    // no more than 32 characters.
+    'cck_vcard_show' => array(
+      // The human-readable label of the field that will be 
+      // seen in the Manage fields screen.
+      'label' => t('Vcard'),
+      // A description of what type of data the field stores.
+      'description' => t('Show vcard on output.'),
+    ),
+  );
+}
+
+/**
+* Implementation of hook_field_settings().
+*/
+function cck_vcard_field_settings($op, $field) {
+  switch ($op) {      
+    // Return an array of the names of the field settings 
+    // defined by this module. These are the items that 
+    // CCK will store in the field definition
+    // and they will be available in the $field array.
+    // This should match the items defined in 'form' above.
+    case 'save':
+      return array('cck_vcard_show');
+
+
+    // Optional: Make changes to the default $data array 
+    // created for Views. Omit this if no changes are 
+    // needed, use it to add a custom handler or make 
+    // other changes.
+    case 'views data':
+      // Start with the $data created by CCK
+      // and alter it as needed. The following
+      // code illustrates how you would retrieve
+      // the necessary data.
+      $data = content_views_field_views_data($field);
+      $db_info = content_database_info($field);
+      $table_alias = content_views_tablename($field);
+      if ($data[$table_alias][$field['cck_vcard_show'] .'_value']) {
+        $field_data = 'hide'; 
+      } else {
+        $field_data = 'show'; 
+      }
+      // Make changes to $data as needed here.
+      return $data;
+  }
+}
+/**
+* Implementation of hook_theme().
+*/
+function cck_vcard_theme() {
+
+  return array(
+    // Themes for the formatters.
+    'cck_vcard_formatter_default' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+/**
+* Implementation of hook_field_formatter_info().
+* 
+* All fields should have a 'default' formatter.
+* Any number of other formatters can be defined as well.
+* It's nice for there always to be a 'plain' option
+* for the raw value, but that is not required.
+* 
+*/
+function cck_vcard_field_formatter_info() {
+  return array(
+    // The machine name of the formatter.
+    'default' => array(
+      // The human-readable label shown on the Display 
+      // fields screen.
+      'label' => t('Default'),
+      // An array of the field types this formatter 
+      // can be used on.
+      'field types' => array('cck_vcard_show'),
+      // CONTENT_HANDLE_CORE:   CCK will pass the formatter
+      // a single value.
+      // CONTENT_HANDLE_MODULE: CCK will pass the formatter
+      // an array of all the values. None of CCK's core 
+      // formatters use multiple values, that is an option
+      // available to other modules that want it.
+      'multiple values' => CONTENT_HANDLE_MODULE,
+    ),
+  );
+}
+function cck_vcard_content_is_empty($item, $field) {
+  if ($field['data_type'] == 'int' || $field['data_type'] == 'float') {
+    return !is_numeric($item['value']);
+  }
+  return empty($item['value']);
+}
+
+/**
+* Theme function for 'default' example field formatter.
+* 
+* $element['#item']: the sanitized $delta value for the item,
+* $element['#field_name']: the field name,
+* $element['#type_name']: the $node->type,
+* $element['#formatter']: the $formatter_name,
+* $element'#node']: the $node,
+* $element['#delta']: the delta of this item, like '0',
+* 
+*/
+function theme_cck_vcard_formatter_default($element) {
+  //$cck_vcard_output = 'hello world!';
+  //return $cck_vcard_output;
+  $ntype = $element['#node']->type;
+  $cck_vcard_fields_enable = variable_get('cck_vcard_fields_enable_'. $ntype, 0);
+  $cck_vcard_fields_org = variable_get('cck_vcard_fields_org_'. $ntype, 'void');
+  $cck_vcard_fields_fname = variable_get('cck_vcard_fields_fname_'. $ntype, 'void');
+  $cck_vcard_fields_lname = variable_get('cck_vcard_fields_lname_'. $ntype, 'void');
+  $cck_vcard_fields_title = variable_get('cck_vcard_fields_title_'. $ntype, 'void');
+  $cck_vcard_fields_email = variable_get('cck_vcard_fields_email_'. $ntype, 'void');
+  $cck_vcard_fields_streetaddress = variable_get('cck_vcard_fields_streetaddress_'. $ntype, 'void');
+  $cck_vcard_fields_extendedaddress = variable_get('cck_vcard_fields_extendedaddress_'. $ntype, 'void');
+  $cck_vcard_fields_locality = variable_get('cck_vcard_fields_locality_'. $ntype, 'void');
+  $cck_vcard_fields_state = variable_get('cck_vcard_fields_state_'. $ntype, 'void');
+  $cck_vcard_fields_postalcode = variable_get('cck_vcard_fields_postalcode_'. $ntype, 'void');
+  $cck_vcard_fields_workphone = variable_get('cck_vcard_fields_workphone_'. $ntype, 'void');
+  $cck_vcard_fields_cellphone = variable_get('cck_vcard_fields_cellphone_'. $ntype, 'void');
+  $cck_vcard_fields_faxphone = variable_get('cck_vcard_fields_faxphone_'. $ntype, 'void');
+  $cck_vcard_fields_url = variable_get('cck_vcard_fields_url_'. $ntype, 'void');
+  $cck_vcard_output ='';
+  if($cck_vcard_fields_enable == 1) {
+  $nid = $element['#node']->nid;
+  $cck_vcard_output = '<a href="'.base_path().'cck_vcard/vcard.php?nid='.$nid.'">View vCard</a>';
+  $cck_vcard_output .= '<div id="vcard" class="vcard" style="display:none">';//
+  $cck_vcard_output .= '<span class="n fn">';
+  if (array_key_exists($cck_vcard_fields_fname, $element['#node'])) {
+    $cck_vcard_output .= '<span class="given-name">'.$element['#node']->{$cck_vcard_fields_fname}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="given-name"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_lname, $element['#node'])) {
+    $cck_vcard_output .= '<span class="family-name">'.$element['#node']->{$cck_vcard_fields_lname}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="family-name"></span>';
+  }
+  $cck_vcard_output .= '</span>';
+  if (array_key_exists($cck_vcard_fields_org, $element['#node'])) {
+    $cck_vcard_output .= '<div class="org">'.$element['#node']->{$cck_vcard_fields_org}[0]['safe'].'</div>';
+  } else {
+    $cck_vcard_output .= '<span class="org"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_email, $element['#node'])) {
+    $cck_vcard_output .= '<span class="email">'.$element['#node']->{$cck_vcard_fields_email}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="org"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_url, $element['#node'])) {
+    if ($element['#node']->{$cck_vcard_fields_url}[0]['url']) {
+      $cck_vcard_output .= '<span class="url">'.$element['#node']->{$cck_vcard_fields_url}[0]['url'].'</span>';
+    } else {
+      if ($element['#node']->{$cck_vcard_fields_url}[0]['safe']) {
+        $cck_vcard_output .= '<span class="url">'.$element['#node']->{$cck_vcard_fields_url}[0]['safe'].'</span>';
+      }
+    }
+  } else {
+    $cck_vcard_output .= '<span class="url"></span>';
+  }
+  $cck_vcard_output .= '<span class="note"></span>';
+  if (array_key_exists($cck_vcard_fields_title, $element['#node'])) {
+    $cck_vcard_output .= '<span class="title">'.$element['#node']->{$cck_vcard_fields_title}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="title"></span>';
+  }
+  $cck_vcard_output .= '<span class="tel">';
+  $cck_vcard_output .= '<span class="type">work</span>';
+  if (array_key_exists($cck_vcard_fields_workphone, $element['#node'])) {
+    $cck_vcard_output .= '<span class="value">'.$element['#node']->{$cck_vcard_fields_workphone}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="value"></span>';
+  }
+  $cck_vcard_output .= '</span>';
+  $cck_vcard_output .= '<span class="tel">';
+  $cck_vcard_output .= '<span class="type">fax</span>';
+  if (array_key_exists($cck_vcard_fields_faxphone, $element['#node'])) {
+    $cck_vcard_output .= '<span class="value">'.$element['#node']->{$cck_vcard_fields_faxphone}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="value"></span>';
+  }
+  $cck_vcard_output .= '</span>';
+  $cck_vcard_output .= '<span class="tel">';
+  $cck_vcard_output .= '<span class="type">cell</span>';
+  if (array_key_exists($cck_vcard_fields_cellphone, $element['#node'])) {
+    $cck_vcard_output .= '<span class="value">'.$element['#node']->{$cck_vcard_fields_cellphone}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="value"></span>';
+  }
+  $cck_vcard_output .= '</span>';
+  $cck_vcard_output .= '<div class="adr">';
+  $cck_vcard_output .= '<span class="type">work</span>';
+  if (array_key_exists($cck_vcard_fields_streetaddress, $element['#node'])) {
+    $cck_vcard_output .= '<span class="streetaddress">'.$element['#node']->{$cck_vcard_fields_streetaddress}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="streetaddress"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_extendedaddress, $element['#node'])) {
+    $cck_vcard_output .= '<span class="extendedaddress">'.$element['#node']->{$cck_vcard_fields_extendedaddress}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="extendedaddress"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_locality, $element['#node'])) {
+    $cck_vcard_output .= '<span class="locality">'.$element['#node']->{$cck_vcard_fields_locality}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="locality"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_state, $element['#node'])) {
+    $cck_vcard_output .= '<span class="region">'.$element['#node']->{$cck_vcard_fields_state}[0]['safe'].'</span>';
+  } else {
+    $cck_vcard_output .= '<span class="region"></span>';
+  }
+  if (array_key_exists($cck_vcard_fields_postalcode, $element['#node'])) {
+    $cck_vcard_output .= '<div class="postalcode">'.$element['#node']->{$cck_vcard_fields_postalcode}[0]['safe'].'</div>';
+  } else {
+    $cck_vcard_output .= '<span class="postalcode"></span>';
+  }
+  //$cck_vcard_output .= '<div class="countryname">United States</div>';
+  $cck_vcard_output .= '</div>';
+  $cck_vcard_output .= '</div>';
+  //$cck_vcard_output = 'hello world!';
+  }
+  //$cck_vcard_output .= $element['#node']->nid;
+  return $cck_vcard_output;
+  //return $element['#item']['#delta'];
+}
+
+/**
+* Theme function for 'plain' example field formatter.
+*/
+function theme_cck_vcard_formatter_plain($element) {
+  print_r($element);
+  return strip_tags($element['#item']['safe']);
+}
+
+/**
+* Implementation of hook_widget_info().
+*
+* Here we indicate that the content module will handle
+* the default value and multiple values for these widgets.
+*
+* Callbacks can be omitted if default handing is used.
+* They're included here just so this module can be used
+* as an example for custom modules that might do things
+* differently.
+*/
+
+function cck_vcard_widget_info() {
+  return array(
+    // The machine name of the widget, no more than 32 
+    // characters.
+    'cck_vcard_widget' => array(
+      // The human-readable label of the field that will be 
+      // seen in the Manage fields screen.
+      'label' => t('CCK vCard'),
+      // An array of the field types this widget can be 
+      // used with.
+      'field types' => array('cck_vcard_show'),
+      // Who will handle multiple values, default is core.
+      // 'CONTENT_HANDLE_MODULE' means the module does it.
+      // See optionwidgets for an example of a module that 
+      // handles its own multiple values.
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        // Who will create the default value, default is core.
+        // 'CONTENT_CALLBACK_CUSTOM' means the module does it.
+        // 'CONTENT_CALLBACK_NONE' means this widget has 
+        // no default value.
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+    ),
+  );
+}
+function cck_vcard_widget($op, &$node, $field, &$node_field) {
+    switch ($op) {
+    
+        case 'form':
+        
+        $url = referer_uri();
+        $arguments = explode('/', $url);
+        $nid = array_pop($arguments);
+        $form = array();
+    
+        $form[$field['field_name']] = array('#tree' => TRUE, '#weight' => $field['widget']['weight']);
+        $form[$field['field_name']][0]['nid'] = array(
+            '#type' => 'hidden',
+            '#value' => isset($node_field[0]['nid']) ? $node_field[0]['nid'] : $nid,
+        );
+        $form[$field['field_name']][0]['display'] = array(
+            '#type' => 'item',
+            '#title' => $field['widget']['label'],
+            '#value' => isset($node_field[0]['nid']) ? $node_field[0]['nid'] : $nid,
+            '#description' => t($field['widget']['description']),
+         );
+         return $form;
+    }
+}
+
+ /*
+  * Function to print Vcard
+  */
+function cck_vcard_create_vcard() {
+  header('Content-Type: text/x-vcard; charset=utf-8');
+  header('Content-Disposition: attachment; filename="vcard.vcf"');
+   
+  // BEGIN:VCARD
+   //VERSION:3.0
+   $nid = $_GET['nid'];
+  $node = node_load($nid);
+  
+/*
+  print '<pre>';
+  print_r($node);
+  print '</pre>';
+*/
+  
+  $ntype = $node->type;
+  $cck_vcard_fields_enable = variable_get('cck_vcard_fields_enable_'. $ntype, 0);
+  $cck_vcard_fields_org = variable_get('cck_vcard_fields_org_'. $ntype, 'void');
+  $cck_vcard_fields_fname = variable_get('cck_vcard_fields_fname_'. $ntype, 'void');
+  $cck_vcard_fields_lname = variable_get('cck_vcard_fields_lname_'. $ntype, 'void');
+  $cck_vcard_fields_title = variable_get('cck_vcard_fields_title_'. $ntype, 'void');
+  $cck_vcard_fields_email = variable_get('cck_vcard_fields_email_'. $ntype, 'void');
+  $cck_vcard_fields_streetaddress = variable_get('cck_vcard_fields_streetaddress_'. $ntype, 'void');
+  $cck_vcard_fields_extendedaddress = variable_get('cck_vcard_fields_extendedaddress_'. $ntype, 'void');
+  $cck_vcard_fields_locality = variable_get('cck_vcard_fields_locality_'. $ntype, 'void');
+  $cck_vcard_fields_state = variable_get('cck_vcard_fields_state_'. $ntype, 'void');
+  $cck_vcard_fields_postalcode = variable_get('cck_vcard_fields_postalcode_'. $ntype, 'void');
+  $cck_vcard_fields_workphone = variable_get('cck_vcard_fields_workphone_'. $ntype, 'void');
+  $cck_vcard_fields_cellphone = variable_get('cck_vcard_fields_cellphone_'. $ntype, 'void');
+  $cck_vcard_fields_faxphone = variable_get('cck_vcard_fields_faxphone_'. $ntype, 'void');
+  $cck_vcard_fields_url = variable_get('cck_vcard_fields_url_'. $ntype, 'void');
+
+
+  
+  if (array_key_exists($cck_vcard_fields_fname, $node)) {
+    $fname = $node->{$cck_vcard_fields_fname}[0]['value'];
+  } else {
+    $fname = '';
+  }
+  if (array_key_exists($cck_vcard_fields_lname, $node)) {
+    $lname = $node->{$cck_vcard_fields_lname}[0]['value'];
+  } else {
+    $lname = '';
+  }
+  if (array_key_exists($cck_vcard_fields_org, $node)) {
+    $org = $node->{$cck_vcard_fields_org}[0]['value'];
+  } else {
+    $org = '';
+  }
+  if (array_key_exists($cck_vcard_fields_email, $node)) {
+    if (isset($node->{$cck_vcard_fields_email}[0]['email'])){
+      $email = $node->{$cck_vcard_fields_email}[0]['email'];
+    } else {
+      $email = $node->{$cck_vcard_fields_email}[0]['value'];
+    }
+  } else {
+    $email = '';
+  }
+  if (array_key_exists($cck_vcard_fields_title, $node)) {
+    $title = $node->{$cck_vcard_fields_title}[0]['value'];
+  } else {
+    $title = '';
+  }
+  if (array_key_exists($cck_vcard_fields_streetaddress, $node)) {
+    $address = $node->{$cck_vcard_fields_streetaddress}[0]['value'];
+  } else {
+    $address = '';
+  }
+  if (array_key_exists($cck_vcard_fields_extendedaddress, $node)) {
+    $extendedaddress = $node->{$cck_vcard_fields_extendedaddress}[0]['value'];
+  } else {
+    $extendedaddress = '';
+  }
+  if (array_key_exists($cck_vcard_fields_locality, $node)) {
+    $city = $node->{$cck_vcard_fields_locality}[0]['value'];
+  } else {
+    $city = '';
+  }
+  if (array_key_exists($cck_vcard_fields_state, $node)) {
+    $state = $node->{$cck_vcard_fields_state}[0]['value'];
+  } else {
+    $state = '';
+  }
+  if (array_key_exists($cck_vcard_fields_postalcode, $node)) {
+    $zip = $node->{$cck_vcard_fields_postalcode}[0]['value'];
+  } else {
+    $zip = '';
+  }
+  if (array_key_exists($cck_vcard_fields_workphone, $node)) {
+    $workphone = $node->{$cck_vcard_fields_workphone}[0]['value'];
+  } else {
+    $workphone = '';
+  }
+  if (array_key_exists($cck_vcard_fields_faxphone, $node)) {
+    $fax = $node->{$cck_vcard_fields_faxphone}[0]['value'];
+  } else {
+    $fax = '';
+  }
+  if (array_key_exists($cck_vcard_fields_cellphone, $node)) {
+    $cell = $node->{$cck_vcard_fields_cellphone}[0]['value'];
+  } else {
+    $cell = '';
+  }
+  if (array_key_exists($cck_vcard_fields_url, $node)) {
+    $url = $node->{$cck_vcard_fields_url}[0]['value'];
+  } else {
+    $url = '';
+  }
+
+  $output .= 'N;CHARSET=UTF-8:'. $fname. ';'.$lname.';;';
+  $output .= "\n";
+  $output .= 'ORG;CHARSET=UTF-8:'. $org;
+  $output .= "\n";
+  $output .= 'FN;CHARSET=UTF-8:'. $fname. ' '.$lname;
+  $output .= "\n";
+  $output .= 'EMAIL;TYPE=PREF,INTERNET:'. $email;
+  $output .= "\n";
+  $output .= 'TITLE;CHARSET=UTF-8:'. $title;
+  $output .= "\n";
+  $output .= 'ADR;CHARSET=UTF-8;TYPE=work:;;'. $address . ', ' . $extendedaddress . ';' . $city . ';' . $state . ';' . $zip . ';';
+  $output .= "\n";
+  $output .= 'TEL;TYPE=WORK,VOICE:'. $workphone;
+  $output .= "\n";
+  $output .= 'TEL;type=FAX:'. $fax;
+  $output .= "\n";
+  $output .= 'TEL;TYPE=CELL,VOICE:'. $cell;
+  $output .= "\n";
+  $output .= 'URL:'. $url;
+
+  echo 'BEGIN:VCARD';
+  echo "\n";    
+  echo $output;
+  echo "\n";
+  echo 'END:VCARD';
+  //END:VCARD
+ 
+ }
+ 

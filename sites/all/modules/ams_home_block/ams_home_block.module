@@ -1,0 +1,3 @@
+<?php
+
+include_once('ams_home_block.features.inc');

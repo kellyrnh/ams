@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * Enhances Views with reverse relationships for Node Reference fields.
+ */
+
+define('REVERSE_NODE_REFERENCE_MYSQL_MINIMUM', '5.1');
+
+/**
+ * Implementation of hook_views_api().
+ */
+function reverse_node_reference_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'reverse_node_reference') . '/views',
+  );
+}

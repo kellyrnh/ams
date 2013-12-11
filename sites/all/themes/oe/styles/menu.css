@@ -1,0 +1,178 @@
+/**
+ * Controls the backround color of the bar and
+ * the default background state of the links
+ */
+#navigation {
+  border-bottom: solid 1px #DDD;
+  height: 40px;
+  margin-top: 20px;
+  z-index: 990;
+  position: relative;
+  float: right;
+  clear: both;
+  margin-bottom: 2px;
+}
+
+/**
+ * Navigation Layout Alignment from theme settings
+ * Credit: CSS Play, Centering Floats: http://www.cssplay.co.uk/menus/centered.html
+ */
+
+#navigation del {
+  text-decoration: none!important;
+}
+#navigation .wrap-center {
+  display: table;
+  margin: 0 auto;
+}
+#navigation .wrap-left {
+  float: left;
+}
+#navigation .wrap-right {
+  float: right;
+}
+/* @end */
+
+/* @group Level 1 */
+#navigation ul {
+  line-height: 2.85em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  z-index: 985;
+  opacity: 0.9999;
+  border: none;
+  position: relative;
+  background: #FFF url('../images/bg-shade-light.png') repeat-x bottom left;
+  height: 40px;
+}
+
+html>/**/body #navigation {
+ opacity: 1; /* Sets the opacity back for FF3 */
+}
+
+#navigation li {
+  border-right: solid 1px #ddd;
+  float: left;
+  list-style: none;
+  list-style-image: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 980;
+}
+#navigation li.last {
+  border-right: none;
+}
+
+
+/* First level links */
+#navigation a,
+#navigation a:visited {
+  background: #f6f2e8 url('../images/bg-shade-light.png') repeat-x 0 100%;
+  border: none;
+  color: #555;
+  display: block;
+  font-size: 1em;
+  font-weight: bold;
+  margin: 0;
+  overflow: hidden;
+  padding: 0 1.2em;
+  text-decoration: none;
+
+}
+/* First level regular link hover */
+#navigation a:hover,
+#navigation a:visited:hover,
+#navigation .active-trail a.active:hover,
+#navigation .active-trail a:hover {
+  background: #f6f2e8 url('../images/bg-shade-medium.png') repeat-x 0 100%;
+  color: #fff;
+  text-shadow: none;
+}
+#navigation .expanded a {
+  background: transparent url('../images/icn-arrow-down-light.png') no-repeat 96% 51%;
+}
+/* First level expandable active & hover state */
+#navigation .sfHover a,
+#navigation .sfHover a:hover {
+  background: #f6f2e8 url('../images/bg-shade-light-flip.png') repeat-x;
+  color: #777;
+}
+/* First level regular link active */
+#navigation .active-trail a,
+#navigation .active-trail a.active {
+  color: #000;
+}
+/* @end */
+/* @group Level 2 + */
+#navigation ul ul {
+  background: #fff url('../images/bg-shade-white-lrg.png') repeat-x 0 100%;
+  border: solid 1px #ddd;
+  border-top: 0;
+  width: 13em;
+  left: 0;
+  line-height: 1.25em;
+  color: #555;
+  display: none; /* make sure the submenus aren't visible on load */
+  margin: 0 0 0 -1px; /* make up for border */ 
+  padding: 0;
+  position: absolute;
+  top: 2.75em;
+  z-index: 1000;
+}
+#navigation ul ul li {
+  display: block;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  width: 13em;
+  line-height: normal;
+  border-right: none;
+  text-align: left;
+}
+#navigation li .expanded ul {
+  margin: -2.65em 0 0 15em;
+}
+/* Second level links */
+#navigation ul ul li a,
+#navigation ul ul li a:visited,
+#navigation ul li.active-trail ul li a,
+#navigation .sfHover ul li a {
+  
+  border-bottom: solid 1px #eee;
+  color: #555;
+  display: block;
+  font-size: 0.9em;
+  font-weight: normal;
+  overflow: hidden;
+  padding: 0.8em 1.25em 0.8em 0.75em;
+  text-decoration: none;
+}
+/* remove bottom border, since it's being applied at ul level */
+#navigation ul ul li.last a {
+  border-bottom: none;
+}
+/* indicate menu has children with right arrow bg image */
+#navigation ul ul li.expanded {
+  background: transparent url('../images/icn-arrow-right-light.png') no-repeat 96.5% 50%;
+}
+/* make sure children of expanded menus don't inherit indicator */
+#navigation ul li.expanded li.leaf {
+  background: none;
+}
+/* hover state for all submenu links */
+#navigation ul ul li a:hover,
+#navigation ul ul li a:visited:hover {
+  background: #f6f2e8 url('../images/bg-shade-medium.png') repeat-x 0 100%!important;
+  color: #343321 !important;
+}
+/* active submenu link */
+#navigation ul li.active-trail ul li a.active {
+  color: #000;
+}
+#navigation ul ul ul {
+  z-index: 1001;
+  margin: 0;
+  top: 2.65em;
+}

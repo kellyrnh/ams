@@ -1,0 +1,50 @@
+name = Open Enterprise
+description = AMS Theme
+screenshot = images/screenshot.png
+core = 6.x
+engine = phptemplate
+version = "6.x-1.1"
+
+base theme = ninesixty
+
+; Regions
+
+regions[header] = Header
+regions[top_links] = Top Links
+regions[slider] = Slider
+regions[preface_one] = Preface One
+regions[preface_two] = Preface Two
+regions[preface_three] = Preface Three
+regions[precontent] = Pre Content
+regions[content] = Content
+regions[left] = Sidebar Left
+regions[right] = Sidebar Right
+regions[post_content] = Post Content
+regions[bottom_one] = Bottom One
+regions[bottom_two] = Bottom Two
+regions[bottom_three] = Bottom Three
+regions[bottom_four] = Bottom Four
+regions[footer] = Footer
+regions[node_block] = Node Block
+regions[node_panel_66] = Node Panel 66
+regions[node_panel_33] = Node Panel 33
+
+stylesheets[all][] = styles/styles.css
+stylesheets[all][] = styles/blocks.css
+stylesheets[all][] = styles/blog.css
+stylesheets[all][] = styles/staff.css
+stylesheets[all][] = styles/global.css
+stylesheets[all][] = styles/menu.css
+stylesheets[all][] = styles/slideshow.css
+
+scripts[] = "js/custom.js"
+scripts[] = "js/superfish.js"
+scripts[] = "js/jquery.equalheights.js"
+;scripts[] = "js/jquery.collapsible.js"
+
+; Information added by fserver
+core = "6.x"
+datestamp = ""
+project = "oe"
+project status url = "http://features.leveltendesign.com/fserver"
+version = "6.x-1.0-ALPHA4"

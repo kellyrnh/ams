@@ -1,0 +1,13 @@
+.context-plugins .context-plugin-form .form-checkboxes {
+    
+    max-height: 700px !Important;
+    overflow: inherit !Important;
+
+}
+
+#context-blockform div.context-blockform-selector {
+    height: 30em !Important;
+ 
+}
+
+

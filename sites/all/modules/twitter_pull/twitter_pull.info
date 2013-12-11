@@ -1,0 +1,4 @@
+name = Twitter Pull
+description = Pull Info from Twitter and Create Contextual Insets
+package = Other
+core = 6.x

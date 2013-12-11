@@ -1,0 +1,49 @@
+; $Id: ninesixty.info,v 1.1.2.12 2011/01/24 23:18:13 dvessel Exp $
+
+name = 960 Grid System
+description = A blank base theme using the 960 Grid System. See the "README.txt" file within the theme folder for more information.
+core = 6.x
+engine = phptemplate
+
+; Style sheets.
+stylesheets[all][] = styles/framework/reset.css
+stylesheets[all][] = styles/framework/text.css
+stylesheets[all][] = styles/framework/960.css
+stylesheets[all][] = styles/styles.css
+
+; Block regions.
+regions[left]    = Left sidebar
+regions[right]   = Right sidebar
+regions[content] = Content
+regions[header]  = Header
+regions[footer]  = Footer
+
+; Float these style sheet above others.
+settings[css_float][] = reset.css
+settings[css_float][] = text.css
+
+; This is used to target the 960 styles set from the 'stylesheets' key. Based on the
+; options and selection below, this target will be replaced with one of the options.
+settings[ns_columns_target] = 960.css
+
+; Setup all the possible 960 style options.
+settings[ns_columns_option][12+16] = 960.css
+settings[ns_columns_option][12]    = 960-12-col.css
+settings[ns_columns_option][16]    = 960-16-col.css
+settings[ns_columns_option][24]    = 960-24-col.css
+
+; Select which to use from the options set above.
+settings[ns_columns_select] = 12+16
+
+; Column debug style. Will bind to anything set for ns_columns_option.
+settings[ns_columns_debug_css] = 960-debug.css
+
+; Enable/disable debug style.
+settings[ns_columns_debug] = 0
+
+; Information added by drupal.org packaging script on January 1, 1970 - 00:00
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "ninesixty"
+datestamp = "1295915086"
+

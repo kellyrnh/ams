@@ -1,0 +1,5 @@
+name = WYSIWYG CKEditor Nice
+description = Allows styling the CKEditor toolbar
+dependencies[] = wysiwyg
+package = wysiwyg
+core = 6.x

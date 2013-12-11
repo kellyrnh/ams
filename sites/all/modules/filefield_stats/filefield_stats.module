@@ -1,0 +1,247 @@
+<?php
+
+/**
+ * @file
+ *  Filefield Stats: Provides a formatter and back end for capturing and analysing statistics for filefield elements
+ */
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function filefield_stats_menu() {
+  $items = array();
+
+  // The file path changes depending on the file_download setting
+  switch (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)) {
+    case FILE_DOWNLOADS_PUBLIC :
+      $filepath = file_directory_path();
+      break;
+
+    case FILE_DOWNLOADS_PRIVATE:
+      $filepath = 'system/files';
+      break;
+  }
+
+  // We need to know how "deep" the filepath is - this changes the page argument positions
+  $offset = count(explode('/', $filepath));
+  $items[$filepath .'/filefield_stats/%field_file/%filefield_stats_node_revision/%user'] = array(
+    'page callback' => 'filefield_stats_download',
+    'page arguments' => array($offset + 1, $offset + 2, $offset + 3),
+    'access callback' => 'filefield_stats_download_check',
+    'access arguments' => array($offset + 1, $offset + 2, $offset + 3, $offset + 4),
+    'file' => 'field_file.inc',
+    'file path' => drupal_get_path('module', 'filefield'),
+  );
+
+  $items['admin/reports/filefield_stats'] = array(
+    'title' => 'Filefield Stats',
+    'description' => 'View statistics for Filefield downloads which run through the stats system',
+    'page callback' => 'filefield_stats_report',
+    'access arguments' => array('view filefield stats'),
+    'file' => 'filefield_stats.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function filefield_stats_perm() {
+  return array(t('view filefield stats'));
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function filefield_stats_theme() {
+  return array(
+    'filefield_stats_formatter_stats_default'            => array('arguments' => array('element' => NULL)),
+    'filefield_stats_formatter_stats_default_with_count' => array('arguments' => array('element' => NULL)),
+    'filefield_stats_formatter'                          => array('arguments' => array('element' => NULL, 'with_count' => NULL)),
+  );
+}
+
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function filefield_stats_field_formatter_info() {
+  return array(
+    'stats_default' => array(
+      'label' => t('Generic files + Stats URL'),
+      'field types' => array('filefield'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'description' => t('Handles files in a similar way to Generic files with the addition of URL protection & stats tracking'),
+    ),
+    'stats_default_with_count' => array(
+      'label' => t('Generic files + Stats URL + Download Count'),
+      'field types' => array('filefield'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'description' => t('Handles files in a similar way to Generic files with the addition of URL protection, stats tracking and a download count'),
+    ),
+  );
+}
+
+
+/**
+ * Theme function for the field with download count. This calls the generic theme function
+ */
+function theme_filefield_stats_formatter_stats_default_with_count($element) {
+  return theme('filefield_stats_formatter', $element, TRUE);
+}
+
+
+/*
+ * Theme function for the field with no download count. This calls the generic theme function
+ */
+function theme_filefield_stats_formatter_stats_default($element) {
+  return theme('filefield_stats_formatter', $element);
+}
+
+
+/**
+ * Theme function for filefield download links
+ */
+function theme_filefield_stats_formatter($element, $with_count = FALSE) {
+  global $user;
+
+  $file = $element['#item'];
+  $node = $element['#node'];
+  $field = content_fields($element['#field_name']);
+
+  module_load_include('inc', 'filefield', 'filefield_formatter');
+
+  // If we have access to the field and the file is listed forthis field, define some output
+  if (filefield_view_access($field['field_name']) && filefield_file_listed($file, $field)) {
+    $options = array(
+      'attributes' => array(
+        'type' => $file['filemime'] . '; length=' . $file['filesize'],
+      ),
+    );
+
+    // Use the description as the link text if available.
+    if (empty($file['data']['description'])) {
+      $link_text = $file['filename'];
+    }
+    else {
+      $link_text = $file['data']['description'];
+      $options['attributes']['title'] = $file['filename'];
+    }
+
+    $count = '';
+    if ($with_count) {
+      $downloads = filefield_stats_get_stats($file['fid'], $node->vid);
+      $count = ' ('. format_plural($downloads, '@count download', '@count downloads') .')';
+    }
+
+    $args = array($file['fid'], $node->vid, $user->uid);
+
+    $url = file_create_url('filefield_stats/'. implode('/', $args) .'/'. filefield_stats_hash($args));
+    $icon = theme('filefield_icon', $file);
+
+    return '<div class="filefield-file clear-block">'. $icon . l($link_text, $url, $options) . $count .'</div>';
+  }
+
+  return '';
+}
+
+
+/**
+ * Function used to generate the hash by taking an array of arguments, appending the websites private key,
+ * imploding them into a string and returning the md5 of the string.
+ */
+function filefield_stats_hash($args = array()) {
+  $data['hash'] = md5(implode(':', array_merge($args, array(drupal_get_private_key()))));
+  $data['args'] = $args;
+  
+  drupal_alter('filefield_stats_hash', $data);
+  
+  return $data['hash'];
+}
+
+
+/**
+ * The download callback. This writes a record to the table and uses the core file_download function to get the file.
+ */
+function filefield_stats_download($file, $node, $user) {
+  $data = new stdClass();
+  $data->fid = (int)$file['fid'];
+  $data->vid = (int)$node->vid;
+  $data->timestamp = time();
+  $data->uid = $user->uid;
+  $data->hostname = ip_address();
+  $data->referer = referer_uri();
+
+  drupal_write_record('filefield_stats', $data);
+  return call_user_func_array('file_download', explode('/', $file['filepath']));
+}
+
+
+/**
+ * This function is used as the access callback for the download function. Is uses the file, node and user provided from
+ * the URL, passes the appripriate ID's into the hash function and compares them to the hash provided in the URL.
+ */
+function filefield_stats_download_check($file, $node, $url_user, $hash) {
+  global $user;
+  return ($user->uid == $url_user->uid) && ($hash == filefield_stats_hash(array($file['fid'], $node->vid, $url_user->uid)));
+}
+
+
+/**
+ * A simple menu loader function to load a node by a given revision ID.
+ */
+function filefield_stats_node_revision_load($vid) {
+  return node_load(array('vid' => $vid));
+}
+
+
+/**
+ * Returns an integer of the number of downloads a given file has by File ID. The optional Node Revision ID limits
+ * the download stats to a single node.
+ */
+function filefield_stats_get_stats($fid, $vid = NULL) {
+  $sql = 'SELECT COUNT(*) AS count FROM {filefield_stats} WHERE fid = %d';
+  $args = array($fid);
+
+  if (isset($vid)) {
+    $sql .= ' AND vid = %d';
+    $args[] = $vid;
+  }
+
+  return db_result(db_query($sql, $args));
+}
+
+
+/**
+ * Implementaiton of hook_form_FORM_ID_alter().
+ * This is used simply to add a submit callback to the system file settings form.
+ */
+function filefield_stats_form_system_file_system_settings_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'filefield_stats_system_file_settings_form_submit';
+}
+
+
+/**
+ * Custom submit handler for the system file settings form. It is used to rebuild the menu when the filesystem type changes
+ */
+function filefield_stats_system_file_settings_form_submit($form, &$form_state) {
+  // If the previous value differs from the new value then we need to rebuild the menu to use the appropariate file path
+  if ($form_state['values']['file_downloads'] != $form['file_downloads']['#default_value']) {
+    menu_rebuild();
+  }
+}
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function filefield_stats_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'filefield_stats') . '/views',
+  );
+}

@@ -1,0 +1,3 @@
+<?php
+
+include_once('ams_slideshow.features.inc');

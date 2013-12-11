@@ -1,0 +1,11 @@
+name = Views
+description = Create customized lists and queries from your database.
+package = Views
+core = 6.x
+
+; Information added by drupal.org packaging script on 2013-09-11
+version = "6.x-3.0+78-dev"
+core = "6.x"
+project = "views"
+datestamp = "1378899752"
+
